@@ -1,5 +1,6 @@
 streamlit
 pandas
-pdfplumber
 openai
-python-dotenv
+rapidfuzz
+openpyxl
+xlsxwriter
