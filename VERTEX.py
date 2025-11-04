@@ -6,11 +6,7 @@ from dotenv import load_dotenv
 import pandas as pd
 import pdfplumber
 
-load_dotenv()
-
-api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key)
-
+client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 # Configuration
 st.set_page_config(page_title="Posez votre question logistique", layout="centered")
 
