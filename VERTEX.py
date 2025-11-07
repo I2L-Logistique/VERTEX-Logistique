@@ -33,27 +33,7 @@ client = OpenAI(api_key=API_KEY)
 # ---------------------------
 st.set_page_config(page_title="Posez votre question logistique", layout="centered")
 
-# ---------------------------
-# 3) Logo : local -> repo -> fallback web
-# ---------------------------
-# Chemin local attendu (dans ton repo / même dossier)
-LOCAL_LOGO = "vertex_logo.png"
-FALLBACK_LOGO_URL = "https://i.ibb.co/pXfxCkG/vertex-logo.png"  # image de secours hébergée
 
-def show_logo():
-    # Streamlit peut afficher directement une image du repo avec st.image()
-    if os.path.exists(LOCAL_LOGO):
-        st.image(LOCAL_LOGO, width=120)
-    else:
-        # si le fichier n'existe pas (par ex local non poussé), afficher fallback
-        try:
-            st.image(FALLBACK_LOGO_URL, width=120)
-        except Exception:
-            # rien d'important : on continue sans logo
-            pass
-
-# Afficher logo dans l'entête (alignement via CSS plus bas)
-show_logo()
 
 # ---------------------------
 # 4) CSS (couleurs + bulles)
@@ -155,14 +135,47 @@ body {
 </style>
 """, unsafe_allow_html=True)
 
+
 # ---------------------------
-# 5) Header (title + subtitle) with logo container
+# 5) Nouveau Header (VERTEX + Sous-titre + Logo I2L)
 # ---------------------------
-# We show a header div so the CSS absolute positioning for the image is consistent.
-st.markdown('<div class="header">', unsafe_allow_html=True)
-st.markdown('<div class="title">Posez votre question logistique</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Formulez un prompt logistique pour VERTEX</div>', unsafe_allow_html=True)
+
+LOGO_I2L = "i2l_logo.png"  # Le fichier doit être dans le même dossier que VERTEX.py
+
+st.markdown("""
+<style>
+.big-title {
+    text-align: center;
+    font-size: 60px;
+    font-weight: 900;
+    color: #003B73;
+    margin-bottom: -5px; /* Réduit l'espace sous le titre */
+}
+.small-subtitle {
+    text-align: center;
+    font-size: 19px;
+    color: #4A4A4A;
+    margin-top: -10px;  /* Réduit l'espace au-dessus du sous-titre */
+    margin-bottom: 5px; /* Réduit l’espace avant le logo */
+}
+.logo-center {
+    display: flex;
+    justify-content: center;
+    margin-top: -5px; /* Réduit encore l’espace avant le logo */
+    margin-bottom: 20px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Affichage du logo en haut
+if os.path.exists(LOGO_I2L):
+    st.markdown('<div class="logo-center">', unsafe_allow_html=True)
+    st.image(LOGO_I2L, width=100)  # ← plus petit
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Titre + texte
+st.markdown('<div class="big-title">VERTEX</div>', unsafe_allow_html=True)
+st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingénieurs I²L de Metz</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # 6) Input + uploader
