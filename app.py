@@ -181,7 +181,7 @@ st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingé
 # ---------------------------
 # 6) Input + uploader
 # ---------------------------
-prompt = st.text_input("", placeholder="Formuler votre prompt logistique pour VERTEX")
+prompt = st.text_input("Votre prompt :", placeholder="Formuler votre prompt logistique pour VERTEX", label_visibility="collapsed")
 
 uploaded_file = st.file_uploader("Importer un fichier (PDF, TXT, CSV, XLSX)", 
                                  type=["pdf", "txt", "csv", "xlsx"])
