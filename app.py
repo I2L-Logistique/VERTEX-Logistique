@@ -146,11 +146,12 @@ st.markdown("""
 <style>
 .big-title {
     text-align: center;
-    font-size: 60px;
+    font-size: 90px;  /* ← taille agrandie */
     font-weight: 900;
     color: #003B73;
-    margin-bottom: -5px; /* Réduit l'espace sous le titre */
+    margin-bottom: -5px;
 }
+
 .small-subtitle {
     text-align: center;
     font-size: 19px;
