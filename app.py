@@ -1,23 +1,18 @@
-# VERTEX.py
 import streamlit as st
 import os
-from openai import OpenAI
-from dotenv import load_dotenv
 import pandas as pd
 import pdfplumber
+from dotenv import load_dotenv
+from openai import OpenAI
+import re
 
 # ---------------------------
-# 1) Récupération de la clé
+# 1) Récupération API Key
 # ---------------------------
 def get_api_key():
-    # 1) d'abord essayer st.secrets (Streamlit Cloud)
     try:
-        # Format attendu in app secrets: 
-        # [openai]
-        # api_key = "sk-..."
         return st.secrets["openai"]["api_key"]
     except Exception:
-        # 2) fallback local : .env
         load_dotenv()
         return os.getenv("OPENAI_API_KEY")
 
@@ -31,205 +26,109 @@ client = OpenAI(api_key=API_KEY)
 # ---------------------------
 # 2) Page config
 # ---------------------------
-st.set_page_config(page_title="Posez votre question logistique", layout="centered")
-
-
+st.set_page_config(page_title="VERTEX - Assistant Logistique", layout="centered")
 
 # ---------------------------
-# 4) CSS (couleurs + bulles)
+# 3) CSS
 # ---------------------------
 st.markdown("""
 <style>
-/* Layout */
-body {
-    background-color: #DDEDFC;
-    font-family: 'Inter', sans-serif;
-}
-
-/* Positionnement du logo : on le remet en haut à droite via une classe conteneur */
-.header {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* On placera le logo visuellement top-right via margin-left: auto on small header container below */
-.header img {
-    position: absolute;
-    right: 30px;
-    top: 10px;
-}
-
-/* Titres */
-.title {
-    text-align: center;
-    font-size: 30px;
-    font-weight: 700;
-    color: #003B73;
-    margin-bottom: 6px;
-}
-.subtitle {
-    text-align: center;
-    font-size: 18px;
-    color: #4A4A4A;
-    margin-top: 0px;
-    margin-bottom: 18px;
-}
-
-/* Chat container and bubbles */
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-top: 18px;
-    padding-bottom: 20px;
-}
-
+body { background-color: #DDEDFC; font-family: 'Inter', sans-serif; }
 .chat-bubble-user {
-    align-self: flex-end;
-    background-color: #004B8D;
-    color: white;
-    padding: 12px 18px;
-    border-radius: 16px 16px 2px 16px;
-    max-width: 70%;
-    font-size: 16px;
-    word-wrap: break-word;
+    align-self: flex-end; background-color: #004B8D; color: white;
+    padding: 12px 18px; border-radius: 16px 16px 2px 16px;
+    max-width: 70%; font-size: 16px; word-wrap: break-word;
 }
-
 .chat-bubble-ai {
-    align-self: flex-start;
-    background-color: #F8FAFF;
-    border: 1px solid #C7D7ED;
-    padding: 12px 18px;
-    border-radius: 16px 16px 16px 2px;
-    max-width: 70%;
-    font-size: 16px;
-    word-wrap: break-word;
+    align-self: flex-start; background-color: #F8FAFF;
+    border: 1px solid #C7D7ED; padding: 12px 18px;
+    border-radius: 16px 16px 16px 2px; max-width: 80%;
+    font-size: 16px; word-wrap: break-word;
 }
-
-/* Input styles */
-.stTextInput > div > input {
-    border-radius: 10px;
-    border: 1px solid #A9BCCD;
-    padding: 10px;
-    background-color: #FFFFFF;
-}
-
-/* Button styles */
 .stButton > button {
-    background-color: #004B8D;
-    color: white;
-    border-radius: 10px;
-    padding: 10px 26px;
-    font-size: 17px;
-    border: none;
-    font-weight: 600;
-    transition: 0.18s;
+    background-color: #004B8D; color: white; border-radius: 10px;
+    padding: 10px 26px; font-size: 17px; border: none; font-weight: 600;
 }
-.stButton > button:hover {
-    background-color: #003760;
-    transform: scale(1.02);
-    cursor: pointer;
-}
+.stButton > button:hover { background-color: #003760; transform: scale(1.02); }
+.big-title { text-align: center; font-size: 90px; font-weight: 900; color: #003B73; margin-bottom: -5px; }
+.small-subtitle { text-align: center; font-size: 19px; color: #4A4A4A; margin-top: -10px; margin-bottom: 10px; }
+.logo-center { display: flex; justify-content: center; margin-bottom: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
-
 # ---------------------------
-# 5) Nouveau Header (VERTEX + Sous-titre + Logo I2L)
+# 4) En-tête
 # ---------------------------
-
-LOGO_I2L = "i2l_logo.png"  # Le fichier doit être dans le même dossier que VERTEX.py
-
-st.markdown("""
-<style>
-.big-title {
-    text-align: center;
-    font-size: 90px;  /* ← taille agrandie */
-    font-weight: 900;
-    color: #003B73;
-    margin-bottom: -5px;
-}
-
-.small-subtitle {
-    text-align: center;
-    font-size: 19px;
-    color: #4A4A4A;
-    margin-top: -10px;  /* Réduit l'espace au-dessus du sous-titre */
-    margin-bottom: 5px; /* Réduit l’espace avant le logo */
-}
-.logo-center {
-    display: flex;
-    justify-content: center;
-    margin-top: -5px; /* Réduit encore l’espace avant le logo */
-    margin-bottom: 20px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Affichage du logo en haut
+LOGO_I2L = "i2l_logo.png"
 if os.path.exists(LOGO_I2L):
     st.markdown('<div class="logo-center">', unsafe_allow_html=True)
-    st.image(LOGO_I2L, width=100)  # ← plus petit
+    st.image(LOGO_I2L, width=100)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Titre + texte
 st.markdown('<div class="big-title">VERTEX</div>', unsafe_allow_html=True)
-st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingénieurs I²L pour la logistique : </div>', unsafe_allow_html=True)
+st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingénieurs I²L pour la logistique :</div>', unsafe_allow_html=True)
 
 # ---------------------------
-# 6) Input + uploader
+# 5) Inputs
 # ---------------------------
 prompt = st.text_input("Votre prompt :", placeholder="Formuler votre prompt logistique", label_visibility="collapsed")
+uploaded_file = st.file_uploader("Importer un fichier (PDF, TXT, CSV, XLSX)", type=["pdf", "txt", "csv", "xlsx"])
 
-uploaded_file = st.file_uploader("Importer un fichier (PDF, TXT, CSV, XLSX)", 
-                                 type=["pdf", "txt", "csv", "xlsx"])
-
-# ---------------------------
-# 7) Conversation state
-# ---------------------------
 if "history" not in st.session_state:
-    # message objects: {"role": "user"/"assistant", "content": "<texte>"}
     st.session_state.history = []
 
 # ---------------------------
-# 8) Helper: read uploaded files to text
+# 6) Extraction texte
 # ---------------------------
 def extract_text_from_file(uploaded):
     text = ""
     try:
-        # type detection can vary by browser; check extension fallback
         name = uploaded.name.lower()
-        if name.endswith(".txt") or uploaded.type == "text/plain":
+        if name.endswith(".txt"):
             text = uploaded.read().decode(errors="ignore")
-        elif name.endswith(".csv") or uploaded.type == "text/csv":
+        elif name.endswith(".csv"):
             df = pd.read_csv(uploaded)
             text = df.to_string()
-        elif name.endswith(".xlsx") or name.endswith(".xls") or uploaded.type in [
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ]:
+        elif name.endswith(".xlsx") or name.endswith(".xls"):
             df = pd.read_excel(uploaded)
             text = df.to_string()
-        elif name.endswith(".pdf") or uploaded.type == "application/pdf":
+        elif name.endswith(".pdf"):
             with pdfplumber.open(uploaded) as pdf:
                 for page in pdf.pages:
                     page_text = page.extract_text()
                     if page_text:
                         text += page_text + "\n"
         else:
-            # Try to read as text fallback
-            try:
-                text = uploaded.read().decode(errors="ignore")
-            except Exception:
-                text = f"[Impossible de lire le fichier {uploaded.name}]"
+            text = uploaded.read().decode(errors="ignore")
     except Exception as e:
         text = f"[Erreur lors de la lecture du fichier: {e}]"
     return text
 
 # ---------------------------
-# 9) Send button -> call API
+# 7) Fonction d’affichage propre du texte + LaTeX
+# ---------------------------
+
+
+
+def render_ai_answer(ai_answer: str):
+    """
+    Affiche proprement du texte et des équations LaTeX (inline + bloc)
+    compatible avec Streamlit Cloud.
+    """
+    # Nettoyage basique
+    ai_answer = ai_answer.strip()
+    ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garder 2 sauts max
+
+    # Conversion LaTeX : \(...\) -> $...$, \[...\] -> $$...$$
+    ai_answer = ai_answer.replace("\\(", "$").replace("\\)", "$")
+    ai_answer = ai_answer.replace("\\[", "$$").replace("\\]", "$$")
+
+    # Affichage direct avec st.markdown
+    # Laisser Streamlit interpréter le Markdown et LaTeX
+    st.markdown(ai_answer, unsafe_allow_html=True)
+
+# ---------------------------
+# 8) Envoi à l’API
 # ---------------------------
 if st.button("Envoyer"):
     if not prompt.strip() and not uploaded_file:
@@ -240,30 +139,23 @@ if st.button("Envoyer"):
             if uploaded_file:
                 file_text = extract_text_from_file(uploaded_file)
 
-            # final prompt: keep content short for history: we'll store user's raw question separately
             final_prompt = prompt
             if file_text:
-                # trim large files to avoid huge token usage, keep first N chars
-                MAX_CHARS = 30_000  # adjust as needed
-                excerpt = file_text[:MAX_CHARS]
-                final_prompt = final_prompt + "\n\nContenu du fichier (extrait):\n" + excerpt
+                excerpt = file_text[:30000]
+                final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
 
-            # Append user's message (we store only the prompt or final_prompt)
             st.session_state.history.append({"role": "user", "content": final_prompt})
 
-            # Build messages for API: include system + all conversation messages in history
-            messages = [{"role": "system", "content": "Tu es VERTEX, expert en logistique, clair et structuré."}]
-            # Convert history entries into chat roles expected by API
+            messages = [{"role": "system", "content": "Tu es VERTEX, expert en logistique, clair, précis et structuré."}]
             for m in st.session_state.history:
                 messages.append({"role": m["role"], "content": m["content"]})
 
-            # Call the OpenAI chat completions
             try:
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=messages,
                     temperature=0.2,
-                    max_tokens=1000
+                    max_tokens=1500
                 )
                 ai_answer = response.choices[0].message.content
             except Exception as e:
@@ -272,15 +164,12 @@ if st.button("Envoyer"):
             st.session_state.history.append({"role": "assistant", "content": ai_answer})
 
 # ---------------------------
-# 10) Render chat bubbles
+# 9) Affichage conversation
 # ---------------------------
-if st.session_state.history:
-    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
-    for msg in st.session_state.history:
-        bubble = "chat-bubble-user" if msg["role"] == "user" else "chat-bubble-ai"
-        # Use markdown to preserve simple line breaks
-        content = msg["content"].replace("\n", "<br>")
-        st.markdown(f"<div class='{bubble}'>{content}</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
+for msg in st.session_state.history:
+    if msg["role"] == "user":
+        st.markdown(f'<div class="chat-bubble-user">{msg["content"]}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="chat-bubble-ai">', unsafe_allow_html=True)
+        render_ai_answer(msg["content"])
+        st.markdown('</div>', unsafe_allow_html=True)
