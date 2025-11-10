@@ -38,30 +38,12 @@ st.markdown("""
 # ---------------------------
 # 3) CSS
 # ---------------------------
-st.markdown("""
-<style>
-body { background-color: #DDEDFC; font-family: 'Inter', sans-serif; }
-.chat-bubble-user {
-    align-self: flex-end; background-color: #004B8D; color: white;
-    padding: 12px 18px; border-radius: 16px 16px 2px 16px;
-    max-width: 70%; font-size: 16px; word-wrap: break-word;
-}
-.chat-bubble-ai {
-    align-self: flex-start; background-color: #F8FAFF;
-    border: 1px solid #C7D7ED; padding: 12px 18px;
-    border-radius: 16px 16px 16px 2px; max-width: 80%;
-    font-size: 16px; word-wrap: break-word;
-}
-.stButton > button {
-    background-color: #004B8D; color: white; border-radius: 10px;
-    padding: 10px 26px; font-size: 17px; border: none; font-weight: 600;
-}
-.stButton > button:hover { background-color: #003760; transform: scale(1.02); }
-.big-title { text-align: center; font-size: 90px; font-weight: 900; color: #003B73; margin-bottom: -5px; }
-.small-subtitle { text-align: center; font-size: 19px; color: #4A4A4A; margin-top: -10px; margin-bottom: 10px; }
-.logo-center { display: flex; justify-content: center; margin-bottom: 20px; }
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(
+    page_title="VERTEX - Assistant Logistique",
+    page_icon="static/icons/icon-192.png",  # chemin local vers ton icône
+    layout="wide"
+)
+
 
 # ---------------------------
 # 4) En-tête
