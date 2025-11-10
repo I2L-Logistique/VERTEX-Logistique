@@ -26,18 +26,13 @@ client = OpenAI(api_key=API_KEY)
 # ---------------------------
 # 2) Page config
 # ---------------------------
-st.set_page_config(page_title="VERTEX - Assistant Logistique", layout="centered")
 st.markdown("""
-<!-- Lien vers le manifeste PWA -->
-<link rel="manifest" href="/static/manifest.json">
-
-<!-- Couleur de la barre de navigateur -->
+<link rel="manifest" href="https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/static/manifest.json">
 <meta name="theme-color" content="#004B8D">
 
-<!-- Pour iOS -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="VERTEX">
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/static/icons/icon-192.PNG">
 """, unsafe_allow_html=True)
 
 # ---------------------------
