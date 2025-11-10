@@ -27,14 +27,8 @@ client = OpenAI(api_key=API_KEY)
 # 2) Page config
 # ---------------------------
 st.markdown("""
-<link rel="manifest" href="https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/static/manifest.json">
-<meta name="theme-color" content="#004B8D">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="VERTEX">
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/static/icons/icon-192.PNG">
+    <link rel="manifest" href="/static/manifest.json">
 """, unsafe_allow_html=True)
-
 # ---------------------------
 # 3) CSS
 # ---------------------------
