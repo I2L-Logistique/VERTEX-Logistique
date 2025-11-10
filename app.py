@@ -6,6 +6,13 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import re
 
+
+st.set_page_config(
+    page_title="VERTEX - Assistant Logistique",
+    page_icon="static/icons/vertex_logo.png",  # chemin vers ton logo
+    layout="wide"
+)
+
 # ---------------------------
 # 1) Récupération API Key
 # ---------------------------
