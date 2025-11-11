@@ -6,18 +6,29 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import re
 
-
 import streamlit as st
 
-# --- Injecter le manifest et les icônes ---
-st.markdown(
-    """
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#004B8D">
-    """,
-    unsafe_allow_html=True
+# --- Page config avec favicon ---
+st.set_page_config(
+    page_title="VERTEX",
+    page_icon="public/icons/icon-192.png",  # ton icône personnalisée
+    layout="wide"
 )
 
+# --- Ajouter le favicon explicitement dans le HTML ---
+st.markdown("""
+<link rel="icon" href="public/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="public/icons/icon-192.png">
+<meta name="theme-color" content="#004B8D">
+""", unsafe_allow_html=True)
+
+
+
+# --- Injecter le manifest et les icônes ---
+st.markdown("""
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#004B8D">
+""", unsafe_allow_html=True)
 
 
 
@@ -42,7 +53,6 @@ client = OpenAI(api_key=API_KEY)
 # 2) Page config
 # ---------------------------
 
-st.markdown('<link rel="manifest" href="/manifest.json">', unsafe_allow_html=True)
 
 # ---------------------------
 # 3) CSS
