@@ -26,18 +26,8 @@ client = OpenAI(api_key=API_KEY)
 # ---------------------------
 # 2) Page config
 # ---------------------------
-st.markdown("""
-    <!-- Liens PWA -->
-    <link rel="manifest" href="/static/manifest.json">
 
-    <!-- Icônes Apple (iOS) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-icon-180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/apple-icon-152.png">
-    <link rel="apple-touch-icon" sizes="167x167" href="/static/icons/apple-icon-167.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="VERTEX">
-""", unsafe_allow_html=True)
+st.markdown('<link rel="manifest" href="/manifest.json">', unsafe_allow_html=True)
 
 # ---------------------------
 # 3) CSS
