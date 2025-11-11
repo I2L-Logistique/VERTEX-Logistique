@@ -10,22 +10,14 @@ import re
 import streamlit as st
 
 # --- Injecter le manifest et les icônes ---
-st.markdown("""
-    <link rel="manifest" href="data:application/manifest+json,{
-        &quot;name&quot;: &quot;VERTEX - Assistant Logistique&quot;,
-        &quot;short_name&quot;: &quot;VERTEX&quot;,
-        &quot;start_url&quot;: &quot;/&quot;,
-        &quot;display&quot;: &quot;standalone&quot;,
-        &quot;background_color&quot;: &quot;#DDEDFC&quot;,
-        &quot;theme_color&quot;: &quot;#004B8D&quot;,
-        &quot;icons&quot;: [
-            { &quot;src&quot;: &quot;https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/.streamlit/public/icons/icon-192.png&quot;, &quot;sizes&quot;: &quot;192x192&quot;, &quot;type&quot;: &quot;image/png&quot; },
-            { &quot;src&quot;: &quot;https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/.streamlit/public/icons/icon-512.png&quot;, &quot;sizes&quot;: &quot;512x512&quot;, &quot;type&quot;: &quot;image/png&quot; },
-            { &quot;src&quot;: &quot;https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/.streamlit/public/icons/icon-1024.png&quot;, &quot;sizes&quot;: &quot;1024x1024&quot;, &quot;type&quot;: &quot;image/png&quot; }
-        ]
-    }">
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/I2L-Logistique/VERTEX-Logistique/main/.streamlit/public/icons/icon-512.png">
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#004B8D">
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 
