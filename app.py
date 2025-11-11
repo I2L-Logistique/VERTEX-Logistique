@@ -16,12 +16,12 @@ st.set_page_config(
 )
 
 # --- Ajouter le favicon explicitement dans le HTML ---
-st.markdown("""
-<link rel="icon" href="public/icons/icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="public/icons/icon-192.png">
-<meta name="theme-color" content="#004B8D">
-""", unsafe_allow_html=True)
 
+
+st.markdown("""
+<link rel="icon" type="image/png" sizes="192x192" href="public/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="public/icons/icon-512.png">
+""", unsafe_allow_html=True)
 
 
 # --- Injecter le manifest et les icônes ---
