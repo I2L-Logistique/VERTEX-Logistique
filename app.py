@@ -143,18 +143,33 @@ def extract_text_from_file(uploaded):
 
 
 def render_ai_answer(ai_answer: str) -> str:
+    """
+    Formate proprement la réponse AI pour Streamlit :
+    - Texte + LaTeX
+    - Sauts de ligne correctement affichés
+    - Encadré bleu ciel avec bordure et ombre
+    """
+    import re
+
+    # Nettoyage basique
     ai_answer = ai_answer.strip()
     ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garder max 2 sauts
 
+    # Conversion LaTeX
     ai_answer = ai_answer.replace("\\(", "$").replace("\\)", "$")
     ai_answer = ai_answer.replace("\\[", "$$").replace("\\]", "$$")
 
+    # Remplacer sauts de ligne par <br> pour HTML
+    ai_answer = ai_answer.replace("\n", "<br>")
+
+    # HTML pour le "chat bubble"
     html = f"""
     <div class="chat-bubble-ai">
-    {ai_answer}
+        {ai_answer}
     </div>
     """
     return html
+
 
 
 # ---------------------------
