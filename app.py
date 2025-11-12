@@ -143,33 +143,18 @@ def extract_text_from_file(uploaded):
 
 
 def render_ai_answer(ai_answer: str) -> str:
-    """
-    Formate proprement la réponse AI pour Streamlit :
-    - Texte + LaTeX
-    - Sauts de ligne correctement affichés
-    - Encadré bleu ciel avec bordure et ombre
-    """
-    import re
-
-    # Nettoyage basique
     ai_answer = ai_answer.strip()
     ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garder max 2 sauts
 
-    # Conversion LaTeX
     ai_answer = ai_answer.replace("\\(", "$").replace("\\)", "$")
     ai_answer = ai_answer.replace("\\[", "$$").replace("\\]", "$$")
 
-    # Remplacer sauts de ligne par <br> pour HTML
-    ai_answer = ai_answer.replace("\n", "<br>")
-
-    # HTML pour le "chat bubble"
     html = f"""
     <div class="chat-bubble-ai">
-        {ai_answer}
+    {ai_answer}
     </div>
     """
     return html
-
 
 
 # ---------------------------
@@ -194,21 +179,21 @@ if st.button("Envoyer"):
 
             try:
                 # Appel GPT-5 avec la méthode officielle adaptée
-                response = client.chat.completions.create(
-                model="gpt-5",
-                messages=[
-               {"role": "user", "content": final_prompt}
-               ]
-              )
-                ai_answer = response.choices[0].message.content.strip()
+                response = client.responses.create(
+                    model="gpt-5",
+                    input=final_prompt,
+                    reasoning={"effort": "low"},
+                    text={"verbosity": "low"}
+                )
+                ai_answer = response.output_text.strip()
 
                 if not ai_answer:
-                    ai_answer = "[Aucune réponse reçue de GPT-5 —  possible bug temporaire.]"
+                    ai_answer = "[Aucune réponse reçue de GPT-5 — possible bug temporaire.]"
 
             except Exception as e:
                 ai_answer = f"[Erreur API OpenAI] {e}"
 
-            st.session_state.history.append({"role": "assistant", "content":  ai_answer})
+            st.session_state.history.append({"role": "assistant", "content": ai_answer})
 
     
 
@@ -217,7 +202,7 @@ if st.button("Envoyer"):
 # ---------------------------
 for msg in st.session_state.history:
     if msg["role"] == "user":
-        st.markdown(f'<div class="chat-bubble-user">{msg["content"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="chat-bubble-user">{msg["content"]}</div>',  unsafe_allow_html=True)
     else:
         # Récupérer HTML complet formaté et l’afficher d’un coup
         answer_html = render_ai_answer(msg["content"])
