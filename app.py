@@ -175,21 +175,28 @@ def extract_text_from_file(uploaded):
 # ---------------------------
 # 7) Affichage façon "document PDF"
 # ---------------------------
-def render_ai_answer(ai_answer: str):
-    """Affiche proprement du texte et des équations LaTeX (inline + bloc) compatible avec Streamlit Cloud."""
-    
-    # Nettoyage basique du texte
-    ai_answer = ai_answer.strip()
-    ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garde au max 2 sauts de ligne
-    
-    # Conversion LaTeX : \(...\) -> $...$, \[...\] -> $$...$$
-    ai_answer = ai_answer.replace("\\(", "$").replace("\\)", "$")
-    ai_answer = ai_answer.replace("\\[", "$$").replace("\\]", "$$")
-    
-    # Affichage dans Streamlit (pas en PDF)
-    st.markdown(ai_answer, unsafe_allow_html=True)
+ 
+def render_ai_answer(answer_text: str):
+    """
+    Affiche la réponse de l'IA en format enrichi :
+    - Markdown (titres, listes, gras, etc.)
+    - LaTeX (équations mathématiques)
+    """
+    st.markdown("""
+    <script>
+    MathJax = {
+      tex: {inlineMath: [['$', '$'], ['\\\\(', '\\\\)']]},
+      svg: {fontCache: 'global'}
+    };
+    </script>
+    <script type="text/javascript" async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    """, unsafe_allow_html=True)
 
-
+    st.markdown('<div class="pdf-block">', unsafe_allow_html=True)
+    st.markdown(answer_text, unsafe_allow_html=False)
+    st.markdown('</div>', unsafe_allow_html=True)
 # ---------------------------
 # 8) Envoi du prompt à GPT
 # ---------------------------
@@ -227,5 +234,4 @@ if st.session_state.history:
         None
     )
     if last_ai_message:
-      
         render_ai_answer(last_ai_message)
