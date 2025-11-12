@@ -208,7 +208,7 @@ if st.button("Envoyer"):
             except Exception as e:
                 ai_answer = f"[Erreur API OpenAI] {e}"
 
-            st.session_state.history.append({"role": "assistant", "content": ai_answer})
+            st.session_state.history.append({"role": "assistant", " content": ai_answer})
 
     
 
