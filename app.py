@@ -6,34 +6,25 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import re
 
-import streamlit as st
-
-# --- Page config avec favicon ---
+# ---------------------------
+# 1) Configuration de la page
+# ---------------------------
 st.set_page_config(
     page_title="VERTEX",
-    page_icon="public/icons/icon-192.png",  # ton icône personnalisée
+    page_icon="public/icons/icon-192.png",
     layout="wide"
 )
 
-# --- Ajouter le favicon explicitement dans le HTML ---
-
-
+# Liens manifest + favicon
 st.markdown("""
 <link rel="icon" type="image/png" sizes="192x192" href="public/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="public/icons/icon-512.png">
-""", unsafe_allow_html=True)
-
-
-# --- Injecter le manifest et les icônes ---
-st.markdown("""
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#004B8D">
 """, unsafe_allow_html=True)
 
-
-
 # ---------------------------
-# 1) Récupération API Key
+# 2) Chargement de la clé API
 # ---------------------------
 def get_api_key():
     try:
@@ -44,53 +35,97 @@ def get_api_key():
 
 API_KEY = get_api_key()
 if not API_KEY:
-    st.error("La clé OpenAI est introuvable. En local : crée un fichier .env avec OPENAI_API_KEY=...  — Sur Streamlit Cloud : ajoute la clé dans Settings → Secrets.")
+    st.error("⚠️ Clé OpenAI manquante. Ajoute-la dans ton fichier .env ou dans Settings > Secrets.")
     st.stop()
 
 client = OpenAI(api_key=API_KEY)
 
 # ---------------------------
-# 2) Page config
-# ---------------------------
-
-
-# ---------------------------
-# 3) CSS
+# 3) Styles CSS
 # ---------------------------
 st.markdown("""
 <style>
-body { background-color: #DDEDFC; font-family: 'Inter', sans-serif; }
-.chat-bubble-user {
-    align-self: flex-end; background-color: #004B8D; color: white;
-    padding: 12px 18px; border-radius: 16px 16px 2px 16px;
-    max-width: 70%; font-size: 16px; word-wrap: break-word;
+body {
+    background-color: #DDEDFC;
+    font-family: 'Inter', sans-serif;
 }
-.chat-bubble-ai {
-    background-color: #DDEDFC;  /* Bleu ciel */
-    border: 1px solid #B0CDEB;
-    padding: 20px 24px;
-    border-radius: 18px;
-    max-width: 95%;
-    width: auto;
-    font-size: 17px;
-    word-wrap: break-word;
-    margin: 10px auto;
-    box-shadow: 0 2px 6px rgba(0, 75, 141, 0.1);
+.big-title {
+    text-align: center;
+    font-size: 90px;
+    font-weight: 900;
+    color: #003B73;
+    margin-bottom: -5px;
 }
-
+.small-subtitle {
+    text-align: center;
+    font-size: 19px;
+    color: #4A4A4A;
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
+.logo-center {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
 .stButton > button {
-    background-color: #004B8D; color: white; border-radius: 10px;
-    padding: 10px 26px; font-size: 17px; border: none; font-weight: 600;
+    background-color: #004B8D;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 26px;
+    font-size: 17px;
+    border: none;
+    font-weight: 600;
 }
-.stButton > button:hover { background-color: #003760; transform: scale(1.02); }
-.big-title { text-align: center; font-size: 90px; font-weight: 900; color: #003B73; margin-bottom: -5px; }
-.small-subtitle { text-align: center; font-size: 19px; color: #4A4A4A; margin-top: -10px; margin-bottom: 10px; }
-.logo-center { display: flex; justify-content: center; margin-bottom: 20px; }
+.stButton > button:hover {
+    background-color: #003760;
+    transform: scale(1.02);
+}
+.chat-bubble-user {
+    align-self: flex-end;
+    background-color: #004B8D;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 16px 16px 2px 16px;
+    max-width: 70%;
+    font-size: 16px;
+    word-wrap: break-word;
+}
+.pdf-block {
+    background-color: #F7FAFE;
+    border: 1px solid #C2D8F2;
+    border-radius: 12px;
+    padding: 40px 50px;
+    margin-top: 25px;
+    font-family: 'Georgia', serif;
+    font-size: 18px;
+    line-height: 1.7;
+    color: #001F3F;
+    text-align: justify;
+    box-shadow: 0 4px 8px rgba(0, 75, 141, 0.1);
+}
+.pdf-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #004B8D;
+    text-align: center;
+    margin-bottom: 25px;
+    font-family: 'Georgia', serif;
+}
+h2, h3 {
+    color: #004B8D;
+    font-family: 'Georgia', serif;
+    margin-top: 25px;
+    margin-bottom: 10px;
+}
+ul {
+    margin-left: 25px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# 4) En-tête
+# 4) En-tête principale
 # ---------------------------
 LOGO_I2L = "i2l_logo.png"
 if os.path.exists(LOGO_I2L):
@@ -102,7 +137,7 @@ st.markdown('<div class="big-title">VERTEX</div>', unsafe_allow_html=True)
 st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingénieurs I²L pour la logistique :</div>', unsafe_allow_html=True)
 
 # ---------------------------
-# 5) Inputs
+# 5) Zone de saisie utilisateur
 # ---------------------------
 prompt = st.text_input("Votre prompt :", placeholder="Formuler votre prompt logistique", label_visibility="collapsed")
 uploaded_file = st.file_uploader("Importer un fichier (PDF, TXT, CSV, XLSX)", type=["pdf", "txt", "csv", "xlsx"])
@@ -111,7 +146,7 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ---------------------------
-# 6) Extraction texte
+# 6) Extraction du texte
 # ---------------------------
 def extract_text_from_file(uploaded):
     text = ""
@@ -138,71 +173,62 @@ def extract_text_from_file(uploaded):
     return text
 
 # ---------------------------
-# 7) Fonction d’affichage propre du texte + LaTeX
+# 7) Affichage façon "document PDF"
 # ---------------------------
-
-
-def render_ai_answer(ai_answer: str) -> str:
-    ai_answer = ai_answer.strip()
-    ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garder max 2 sauts
-
-    ai_answer = ai_answer.replace("\\(", "$").replace("\\)", "$")
-    ai_answer = ai_answer.replace("\\[", "$$").replace("\\]", "$$")
-
-    html = f"""
-    <div class="chat-bubble-ai">
-    {ai_answer}
-    </div>
-    """
-    return html
-
+def render_ai_answer(ai_answer: str):
+    if not ai_answer.strip():
+        st.info("Aucune réponse reçue.")
+        return
+    st.markdown('<div class="pdf-block">', unsafe_allow_html=True)
+    sections = [s.strip() for s in ai_answer.split("\n\n") if s.strip()]
+    for sec in sections:
+        if "$$" in sec:
+            parts = re.split(r"\$\$(.*?)\$\$", sec, flags=re.DOTALL)
+            for i, part in enumerate(parts):
+                if i % 2 == 0:
+                    st.markdown(part)
+                else:
+                    st.latex(part.strip())
+        else:
+            st.markdown(sec)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
-# 8) Envoi à l’API
+# 8) Envoi du prompt à GPT
 # ---------------------------
-
 if st.button("Envoyer"):
     if not prompt.strip() and not uploaded_file:
         st.warning("Veuillez saisir un message ou importer un fichier.")
     else:
-        with st.spinner("Analyse en cours avec GPT-5"):
+        with st.spinner("Analyse en cours avec GPT-5..."):
             file_text = ""
             if uploaded_file:
                 file_text = extract_text_from_file(uploaded_file)
-
             final_prompt = prompt
             if file_text:
                 excerpt = file_text[:30000]
                 final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
-
             st.session_state.history.append({"role": "user", "content": final_prompt})
-
             try:
-                # Appel GPT-5 avec la méthode officielle adaptée
                 response = client.responses.create(
                 model="gpt-5",
                 input=final_prompt
                  )
-
                 ai_answer = response.output_text.strip()
-
                 if not ai_answer:
-                    ai_answer = "[Aucune réponse reçue de GPT-5 — possible bug temporaire.]"
-
+                    ai_answer = "[Aucune réponse reçue de GPT-5 — possible délai API.]"
             except Exception as e:
                 ai_answer = f"[Erreur API OpenAI] {e}"
-
             st.session_state.history.append({"role": "assistant", "content": ai_answer})
 
-    
-
 # ---------------------------
-# 9) Affichage conversation
+# 9) Affichage final (bloc unique formaté)
 # ---------------------------
-for msg in st.session_state.history:
-    if msg["role"] == "user":
-        st.markdown(f'<div class="chat-bubble-user">{msg["content"]}</div>',  unsafe_allow_html=True)
-    else:
-        # Récupérer HTML complet formaté et l’afficher d’un coup
-        answer_html = render_ai_answer(msg["content"])
-        st.markdown(answer_html, unsafe_allow_html=True)
+if st.session_state.history:
+    last_ai_message = next(
+        (m["content"] for m in reversed(st.session_state.history) if m["role"] == "assistant"),
+        None
+    )
+    if last_ai_message:
+      
+        render_ai_answer(last_ai_message)
