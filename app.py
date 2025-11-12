@@ -196,9 +196,7 @@ if st.button("Envoyer"):
                 # Appel GPT-5 avec la méthode officielle adaptée
                 response = client.responses.create(
                     model="gpt-5",
-                    input=final_prompt,
-                    reasoning={"effort": "low"},
-                    text={"verbosity": "low"}
+                    input=final_prompt
                 )
                 ai_answer = response.output_text.strip()
 
