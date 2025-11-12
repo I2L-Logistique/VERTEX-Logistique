@@ -194,14 +194,16 @@ if st.button("Envoyer"):
 
             try:
                 # Appel GPT-5 avec la méthode officielle adaptée
-                response = client.responses.create(
-                    model="gpt-5",
-                    input=final_prompt
-                )
-                ai_answer = response.output_text.strip()
+                response = client.chat.completions.create(
+                model="gpt-5",
+                messages=[
+               {"role": "user", "content": final_prompt}
+               ]
+              )
+                ai_answer = response.choices[0].message.content.strip()
 
                 if not ai_answer:
-                    ai_answer = "[Aucune réponse reçue de GPT-5 — possible bug temporaire.]"
+                    ai_answer = "[Aucune réponse reçue de GPT-5 —  possible bug temporaire.]"
 
             except Exception as e:
                 ai_answer = f"[Erreur API OpenAI] {e}"
