@@ -15,6 +15,24 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- Initialisation globale de MathJax (pour le rendu LaTeX dès le premier message) ---
+# --- Initialisation globale MathJax ---
+st.markdown("""
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+    displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
+    processEscapes: true
+  },
+  svg: { fontCache: 'global' }
+};
+</script>
+<script async id="MathJax-script" type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+""", unsafe_allow_html=True)
+
 # Liens manifest + favicon
 st.markdown("""
 <link rel="icon" type="image/png" sizes="192x192" href="public/icons/icon-192.png">
@@ -176,27 +194,55 @@ def extract_text_from_file(uploaded):
 # 7) Affichage façon "document PDF"
 # ---------------------------
  
-def render_ai_answer(answer_text: str):
-    """
-    Affiche la réponse de l'IA en format enrichi :
-    - Markdown (titres, listes, gras, etc.)
-    - LaTeX (équations mathématiques)
-    """
+def render_message(role, content):
+    """Affiche chaque message avec MathJax actif et forçage de rendu."""
+    st.markdown("""
+    <style>
+    .bubble-user, .bubble-ai {
+        padding: 14px 22px;
+        border-radius: 14px;
+        margin: 10px 0;
+        max-width: 90%;
+        line-height: 1.6;
+        font-size: 16px;
+    }
+    .bubble-user {
+        background-color: #004B8D;
+        color: white;
+        margin-left: auto;
+    }
+    .bubble-ai {
+        background-color: #FFFFFF;
+        border: 1px solid #C2D8F2;
+        box-shadow: 0 4px 8px rgba(0,75,141,0.1);
+        color: #001F3F;
+        font-family: 'Georgia', serif;
+        text-align: justify;
+    }
+    mjx-container[jax="CHTML"][display="true"] {
+        display: block;
+        text-align: center;
+        margin: 1.4em auto;
+        font-size: 1.15em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    bubble_class = "bubble-user" if role == "user" else "bubble-ai"
+    st.markdown(f'<div class="{bubble_class}">', unsafe_allow_html=True)
+    st.markdown(content, unsafe_allow_html=False)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # 🪄 Force le re-rendu MathJax sur toute la page (corrige les blocs 1 et 5)
     st.markdown("""
     <script>
-    MathJax = {
-      tex: {inlineMath: [['$', '$'], ['\\\\(', '\\\\)']]},
-      svg: {fontCache: 'global'}
-    };
-    </script>
-    <script type="text/javascript" async
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    if (window.MathJax) {
+        MathJax.typesetPromise();
+    }
     </script>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="pdf-block">', unsafe_allow_html=True)
-    st.markdown(answer_text, unsafe_allow_html=False)
-    st.markdown('</div>', unsafe_allow_html=True)
+
 # ---------------------------
 # 8) Envoi du prompt à GPT
 # ---------------------------
@@ -208,30 +254,97 @@ if st.button("Envoyer"):
             file_text = ""
             if uploaded_file:
                 file_text = extract_text_from_file(uploaded_file)
+            
             final_prompt = prompt
             if file_text:
                 excerpt = file_text[:30000]
                 final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
-            st.session_state.history.append({"role": "user", "content": final_prompt})
+
+            # 🧩 Ajoute ce formatage pour un rendu LaTeX propre :
+            final_prompt = (
+                "Formate ta réponse en Markdown avec les équations LaTeX entre $$ ... $$ "
+                "pour qu’elles soient affichées joliment comme dans un article scientifique. "
+                "Utilise un style clair et soigné, avec les équations centrées.\n\n"
+                + final_prompt
+            )
+
+            st.session_state.history.append({"role": "user", "content": prompt})
+
             try:
                 response = client.responses.create(
-                model="gpt-5",
-                input=final_prompt
-                 )
+                    model="gpt-5",
+                    input=final_prompt
+                )
                 ai_answer = response.output_text.strip()
                 if not ai_answer:
                     ai_answer = "[Aucune réponse reçue de GPT-5 — possible délai API.]"
             except Exception as e:
                 ai_answer = f"[Erreur API OpenAI] {e}"
+
             st.session_state.history.append({"role": "assistant", "content": ai_answer})
 
+
 # ---------------------------
-# 9) Affichage final (bloc unique formaté)
+# 9) Affichage du chat complet avec LaTeX
 # ---------------------------
-if st.session_state.history:
-    last_ai_message = next(
-        (m["content"] for m in reversed(st.session_state.history) if m["role"] == "assistant"),
-        None
-    )
-    if last_ai_message:
-        render_ai_answer(last_ai_message)
+
+def render_message(role, content):
+    """Affiche chaque message du chat avec MathJax."""
+    
+    st.markdown("""
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
+        displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+    </script>
+    <script async id="MathJax-script" type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <style>
+    .bubble-user, .bubble-ai {
+        padding: 14px 22px;
+        border-radius: 14px;
+        margin: 10px 0;
+        max-width: 90%;
+        line-height: 1.6;
+        font-size: 16px;
+    }
+    .bubble-user {
+        background-color: #004B8D;
+        color: white;
+        margin-left: auto;
+    }
+    .bubble-ai {
+        background-color: #FFFFFF;
+        border: 1px solid #C2D8F2;
+        box-shadow: 0 4px 8px rgba(0,75,141,0.1);
+        color: #001F3F;
+        font-family: 'Georgia', serif;
+        text-align: justify;
+    }
+    mjx-container[jax="CHTML"][display="true"] {
+        display: block;
+        text-align: center;
+        margin: 1.4em auto;
+        font-size: 1.15em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    if role == "user":
+        st.markdown(f'<div class="bubble-user">{content}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="bubble-ai">{content}</div>', unsafe_allow_html=True)
+
+
+# --- Affichage de tout l’historique du chat ---
+for msg in st.session_state.history:
+    render_message(msg["role"], msg["content"])
