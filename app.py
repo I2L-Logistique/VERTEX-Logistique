@@ -66,11 +66,18 @@ body { background-color: #DDEDFC; font-family: 'Inter', sans-serif; }
     max-width: 70%; font-size: 16px; word-wrap: break-word;
 }
 .chat-bubble-ai {
-    align-self: flex-start; background-color: #F8FAFF;
-    border: 1px solid #C7D7ED; padding: 12px 18px;
-    border-radius: 16px 16px 16px 2px; max-width: 80%;
-    font-size: 16px; word-wrap: break-word;
+    background-color: #DDEDFC;  /* Bleu ciel */
+    border: 1px solid #B0CDEB;
+    padding: 20px 24px;
+    border-radius: 18px;
+    max-width: 95%;
+    width: auto;
+    font-size: 17px;
+    word-wrap: break-word;
+    margin: 10px auto;
+    box-shadow: 0 2px 6px rgba(0, 75, 141, 0.1);
 }
+
 .stButton > button {
     background-color: #004B8D; color: white; border-radius: 10px;
     padding: 10px 26px; font-size: 17px; border: none; font-weight: 600;
@@ -135,32 +142,30 @@ def extract_text_from_file(uploaded):
 # ---------------------------
 
 
-
-def render_ai_answer(ai_answer: str):
-    """
-    Affiche proprement du texte et des équations LaTeX (inline + bloc)
-    compatible avec Streamlit Cloud.
-    """
-    # Nettoyage basique
+def render_ai_answer(ai_answer: str) -> str:
     ai_answer = ai_answer.strip()
-    ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garder 2 sauts max
+    ai_answer = re.sub(r'\n{2,}', '\n\n', ai_answer)  # garder max 2 sauts
 
-    # Conversion LaTeX : \(...\) -> $...$, \[...\] -> $$...$$
     ai_answer = ai_answer.replace("\\(", "$").replace("\\)", "$")
     ai_answer = ai_answer.replace("\\[", "$$").replace("\\]", "$$")
 
-    # Affichage direct avec st.markdown
-    # Laisser Streamlit interpréter le Markdown et LaTeX
-    st.markdown(ai_answer, unsafe_allow_html=True)
+    html = f"""
+    <div class="chat-bubble-ai">
+    {ai_answer}
+    </div>
+    """
+    return html
+
 
 # ---------------------------
 # 8) Envoi à l’API
 # ---------------------------
+
 if st.button("Envoyer"):
     if not prompt.strip() and not uploaded_file:
         st.warning("Veuillez saisir un message ou importer un fichier.")
     else:
-        with st.spinner("Analyse en cours..."):
+        with st.spinner("Analyse en cours avec GPT-5"):
             file_text = ""
             if uploaded_file:
                 file_text = extract_text_from_file(uploaded_file)
@@ -172,22 +177,25 @@ if st.button("Envoyer"):
 
             st.session_state.history.append({"role": "user", "content": final_prompt})
 
-            messages = [{"role": "system", "content": "Tu es VERTEX, expert en logistique, clair, précis et structuré."}]
-            for m in st.session_state.history:
-                messages.append({"role": m["role"], "content": m["content"]})
-
             try:
-                response = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=messages,
-                    temperature=0.2,
-                    max_tokens=1500
+                # Appel GPT-5 avec la méthode officielle adaptée
+                response = client.responses.create(
+                    model="gpt-5",
+                    input=final_prompt,
+                    reasoning={"effort": "low"},
+                    text={"verbosity": "low"}
                 )
-                ai_answer = response.choices[0].message.content
+                ai_answer = response.output_text.strip()
+
+                if not ai_answer:
+                    ai_answer = "[Aucune réponse reçue de GPT-5 — possible bug temporaire.]"
+
             except Exception as e:
                 ai_answer = f"[Erreur API OpenAI] {e}"
 
             st.session_state.history.append({"role": "assistant", "content": ai_answer})
+
+    
 
 # ---------------------------
 # 9) Affichage conversation
@@ -196,6 +204,6 @@ for msg in st.session_state.history:
     if msg["role"] == "user":
         st.markdown(f'<div class="chat-bubble-user">{msg["content"]}</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="chat-bubble-ai">', unsafe_allow_html=True)
-        render_ai_answer(msg["content"])
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Récupérer HTML complet formaté et l’afficher d’un coup
+        answer_html = render_ai_answer(msg["content"])
+        st.markdown(answer_html, unsafe_allow_html=True)
