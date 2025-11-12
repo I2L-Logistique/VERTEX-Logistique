@@ -177,37 +177,56 @@ def extract_text_from_file(uploaded):
 # ---------------------------
 def render_ai_answer(ai_answer: str):
     """
-    Affiche la réponse GPT avec mise en page 'PDF' et rendu LaTeX professionnel.
+    Affiche la réponse IA en un seul bloc 'page PDF' :
+    - rend les équations $$...$$ via st.latex() (display math)
+    - laisse les $...$ inline dans st.markdown()
+    - conserve titres, listes, code
     """
-    if not ai_answer.strip():
+    if not ai_answer or not ai_answer.strip():
         st.info("Aucune réponse reçue.")
         return
 
+    # Normalisations simples
+    text = ai_answer.replace("\r\n", "\n").strip()
+
+    # Convertit \(..\) -> $..$ et \[..\] -> $$..$$ si le modèle a utilisé ces formes
+    text = re.sub(r"\\\\\(", "(", text)                    # échappements éventuels
+    text = re.sub(r"\\\(", "$", text)
+    text = re.sub(r"\\\)", "$", text)
+    text = re.sub(r"\\\[(.*?)\\\]", lambda m: "$$" + m.group(1) + "$$", text, flags=re.DOTALL)
+
+    # Ouvre le bloc "page"
     st.markdown('<div class="pdf-block">', unsafe_allow_html=True)
 
-    # Sépare les lignes tout en gardant les formules propres
-    lines = ai_answer.split("\n")
-    for line in lines:
-        line = line.strip()
-        if not line:
-            st.markdown("<br>", unsafe_allow_html=True)
+    # Sépare en sections par double saut de ligne pour garder une bonne hiérarchie
+    sections = [s.strip() for s in re.split(r'\n{2,}', text) if s.strip()]
+
+    for sec in sections:
+        # Si bloc de code (```), afficher avec st.code()
+        if sec.startswith("```") and sec.endswith("```"):
+            code_inside = sec.strip("`").strip()
+            st.code(code_inside)
             continue
 
-        # Détection des formules entre $$ ... $$ ou entre $ ... $
-        if line.startswith("$$") and line.endswith("$$"):
-            st.latex(line.strip("$$"))
-        elif line.startswith("$") and line.endswith("$"):
-            st.latex(line.strip("$"))
-        elif re.search(r"\$\$(.*?)\$\$", line):
-            parts = re.split(r"\$\$(.*?)\$\$", line)
-            for i, p in enumerate(parts):
-                if i % 2 == 0:
-                    st.markdown(p)
+        # Si le bloc contient des équations d'affichage $$ ... $$
+        if re.search(r"\$\$(.*?)\$\$", sec, flags=re.DOTALL):
+            parts = re.split(r"(\$\$.*?\$\$)", sec, flags=re.DOTALL)
+            for part in parts:
+                part = part.strip()
+                if not part:
+                    continue
+                if part.startswith("$$") and part.endswith("$$"):
+                    eq = part[2:-2].strip()
+                    # st.latex rend proprement l'équation en display mode
+                    st.latex(eq)
                 else:
-                    st.latex(p)
+                    # texte : on laisse Streamlit rendre le Markdown + inline math ($...$)
+                    st.markdown(part, unsafe_allow_html=True)
         else:
-            st.markdown(line)
+            # Pas d'équation d'affichage : on affiche tout en markdown (inline math $...$ sera rendu)
+            st.markdown(sec, unsafe_allow_html=True)
 
+    # Fermeture du bloc "page"
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
