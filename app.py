@@ -176,21 +176,38 @@ def extract_text_from_file(uploaded):
 # 7) Affichage façon "document PDF"
 # ---------------------------
 def render_ai_answer(ai_answer: str):
+    """
+    Affiche la réponse GPT avec mise en page 'PDF' et rendu LaTeX professionnel.
+    """
     if not ai_answer.strip():
         st.info("Aucune réponse reçue.")
         return
+
     st.markdown('<div class="pdf-block">', unsafe_allow_html=True)
-    sections = [s.strip() for s in ai_answer.split("\n\n") if s.strip()]
-    for sec in sections:
-        if "$$" in sec:
-            parts = re.split(r"\$\$(.*?)\$\$", sec, flags=re.DOTALL)
-            for i, part in enumerate(parts):
+
+    # Sépare les lignes tout en gardant les formules propres
+    lines = ai_answer.split("\n")
+    for line in lines:
+        line = line.strip()
+        if not line:
+            st.markdown("<br>", unsafe_allow_html=True)
+            continue
+
+        # Détection des formules entre $$ ... $$ ou entre $ ... $
+        if line.startswith("$$") and line.endswith("$$"):
+            st.latex(line.strip("$$"))
+        elif line.startswith("$") and line.endswith("$"):
+            st.latex(line.strip("$"))
+        elif re.search(r"\$\$(.*?)\$\$", line):
+            parts = re.split(r"\$\$(.*?)\$\$", line)
+            for i, p in enumerate(parts):
                 if i % 2 == 0:
-                    st.markdown(part)
+                    st.markdown(p)
                 else:
-                    st.latex(part.strip())
+                    st.latex(p)
         else:
-            st.markdown(sec)
+            st.markdown(line)
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------
