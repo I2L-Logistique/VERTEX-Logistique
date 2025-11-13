@@ -1,56 +1,33 @@
 import streamlit as st
 import os
-import pandas as pd
 import pdfplumber
+import pandas as pd
 from dotenv import load_dotenv
 from openai import OpenAI
-import re
 
 # ---------------------------
 # 1) Configuration de la page
 # ---------------------------
-st.set_page_config(
-    page_title="VERTEX",
-    page_icon="public/icons/icon-192.png",
-    layout="wide"
-)
+st.set_page_config(page_title="VERTEX", page_icon="public/icons/icon-192.png", layout="wide")
 
-# --- Initialisation globale de MathJax (pour le rendu LaTeX dès le premier message) ---
+# --- Initialisation KaTeX ---
 st.markdown("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.15.0/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.15.0/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.15.0/contrib/auto-render.min.js"></script>
 <script>
-window.MathJax = {
-    tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-           displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
-           processEscapes: true },
-    svg: { fontCache: 'global' }
-};
-</script>
-<script async id="MathJax-script" type="text/javascript"
-src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$", right: "$", display: false },
+        { left: "$$", right: "$$", display: true }
+      ]
+    });
+  });
 </script>
 """, unsafe_allow_html=True)
 
-# --- Initialisation globale MathJax robuste pour Streamlit Cloud ---
-st.markdown("""
-<script>
-window.MathJax = {
-    tex: { inlineMath: [['$', '$'], ['\\\\(', '\\\\)']],
-           displayMath: [['$$', '$$'], ['\\\\[', '\\\\]']],
-           processEscapes: true },
-    svg: { fontCache: 'global' }
-};
-document.addEventListener("DOMContentLoaded", function() {
-    if (window.MathJax) {
-        MathJax.startup.promise.then(() => { MathJax.typesetPromise(); });
-    }
-});
-</script>
-<script async id="MathJax-script" type="text/javascript"
-src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-</script>
-""", unsafe_allow_html=True)
-
-# Liens manifest + favicon
+# Favicon + manifest
 st.markdown("""
 <link rel="icon" type="image/png" sizes="192x192" href="public/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="public/icons/icon-512.png">
@@ -70,7 +47,7 @@ def get_api_key():
 
 API_KEY = get_api_key()
 if not API_KEY:
-    st.error("⚠️ Clé OpenAI manquante. Ajoute-la dans ton fichier .env ou dans Settings > Secrets.")
+    st.error("⚠️ Clé OpenAI manquante. Ajoute-la dans .env ou Settings > Secrets.")
     st.stop()
 
 client = OpenAI(api_key=API_KEY)
@@ -86,11 +63,28 @@ body { background-color: #DDEDFC; font-family: 'Inter', sans-serif; }
 .logo-center { display: flex; justify-content: center; margin-bottom: 20px; }
 .stButton > button { background-color: #004B8D; color: white; border-radius: 10px; padding: 10px 26px; font-size: 17px; border: none; font-weight: 600; }
 .stButton > button:hover { background-color: #003760; transform: scale(1.02); }
-.chat-bubble-user { align-self: flex-end; background-color: #004B8D; color: white; padding: 12px 18px; border-radius: 16px 16px 2px 16px; max-width: 70%; font-size: 16px; word-wrap: break-word; }
-.pdf-block { background-color: #F7FAFE; border: 1px solid #C2D8F2; border-radius: 12px; padding: 40px 50px; margin-top: 25px; font-family: 'Georgia', serif; font-size: 18px; line-height: 1.7; color: #001F3F; text-align: justify; box-shadow: 0 4px 8px rgba(0, 75, 141, 0.1); }
-.pdf-title { font-size: 28px; font-weight: 800; color: #004B8D; text-align: center; margin-bottom: 25px; font-family: 'Georgia', serif; }
-h2, h3 { color: #004B8D; font-family: 'Georgia', serif; margin-top: 25px; margin-bottom: 10px; }
-ul { margin-left: 25px; }
+.bubble-user, .bubble-ai {
+    padding: 14px 22px;
+    border-radius: 14px;
+    margin: 10px 0;
+    max-width: 90%;
+    line-height: 1.6;
+    font-size: 16px;
+}
+.bubble-user {
+    background-color: #004B8D;
+    color: white;
+    margin-left: auto;
+    text-align: left;
+}
+.bubble-ai {
+    background-color: #FFFFFF;
+    border: 1px solid #C2D8F2;
+    box-shadow: 0 4px 8px rgba(0,75,141,0.1);
+    color: #001F3F;
+    font-family: 'Georgia', serif;
+    text-align: justify;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -109,28 +103,13 @@ st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingé
 # ---------------------------
 # 5) Zone de saisie utilisateur
 # ---------------------------
-prompt = st.text_input(
-    "Votre prompt :",
-    placeholder="Formulez votre requête logistique ici...",
-    label_visibility="collapsed"
-)
+prompt = st.text_area("Votre prompt :", placeholder="Formulez votre requête logistique ici...", label_visibility="collapsed", height=100)
+uploaded_file = st.file_uploader("Importer un fichier (PDF, TXT, CSV, XLSX)", type=["pdf", "txt", "csv", "xlsx"])
 
-uploaded_file = st.file_uploader(
-    "Importer un fichier (PDF, TXT, CSV, XLSX)",
-    type=["pdf", "txt", "csv", "xlsx"]
-)
-
-# Historique des échanges
 if "history" not in st.session_state:
     st.session_state.history = []
-
-# ⚡ Permet d'envoyer en appuyant sur Entrée
-if prompt and st.session_state.get("last_prompt") != prompt:
-    st.session_state.last_prompt = prompt
-    st.session_state.trigger_send = True
-else:
-    st.session_state.trigger_send = False
-
+if "last_prompt" not in st.session_state:
+    st.session_state.last_prompt = ""
 
 # ---------------------------
 # 6) Extraction du texte
@@ -160,73 +139,22 @@ def extract_text_from_file(uploaded):
     return text
 
 # ---------------------------
-# 7) Affichage façon "document PDF"
-# ---------------------------
-# ---------------------------
-# 7) Affichage façon "document PDF"
+# 7) Affichage des messages
 # ---------------------------
 def render_message(role, content):
-    """Affiche chaque message avec un style propre et MathJax actif."""
-    st.markdown("""
-    <style>
-    /* Style général des bulles */
-    .bubble-user, .bubble-ai {
-        padding: 14px 22px;
-        border-radius: 14px;
-        margin: 10px 0;
-        max-width: 90%;
-        line-height: 1.6;
-        font-size: 16px;
-    }
-
-    /* Bulle utilisateur (bleu foncé, à droite) */
-    .bubble-user {
-        background-color: #004B8D;
-        color: white;
-        margin-left: auto;
-        text-align: left;
-        font-weight: 500;
-        border-radius: 16px 16px 2px 16px;
-    }
-
-    /* Bulle assistant (fond clair, à gauche) */
-    .bubble-ai {
-        background-color: #FFFFFF;
-        border: 1px solid #C2D8F2;
-        box-shadow: 0 4px 8px rgba(0,75,141,0.1);
-        color: #001F3F;
-        font-family: 'Georgia', serif;
-        text-align: justify;
-        border-radius: 16px;
-        padding: 22px 28px;
-        line-height: 1.8;
-    }
-
-    /* Centrage et taille des équations LaTeX */
-    mjx-container[jax="CHTML"][display="true"] {
-        display: block;
-        text-align: center;
-        margin: 1.4em auto;
-        font-size: 1.15em;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # 🗨️ Affichage conditionnel selon le rôle
+    contains_latex = "$$" in content or "$" in content
     if role == "user":
         st.markdown(f'<div class="bubble-user">{content}</div>', unsafe_allow_html=True)
     else:
         st.markdown(f'<div class="bubble-ai">{content}</div>', unsafe_allow_html=True)
-
-    # 🔄 Force le rendu MathJax pour les équations à chaque affichage
-    st.markdown("""
-    <script>
-    if (window.MathJax) {
-        MathJax.typesetPromise();
-    }
-    </script>
-    """, unsafe_allow_html=True)
-
+    if contains_latex:
+        st.markdown(""" 
+        <script>
+        if (window.katex) {
+            katex.renderMathInElement(document.body);
+        }
+        </script>
+        """, unsafe_allow_html=True)
 
 # ---------------------------
 # 8) Envoi du prompt à GPT
@@ -246,22 +174,16 @@ def envoyer_message():
             excerpt = file_text[:30000]
             final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
 
-        # 🧩 Formatage pour LaTeX
         final_prompt = (
-            "Formate ta réponse en Markdown avec les équations LaTeX entre $$ ... $$ "
-            "et les symboles mathématiques dans le texte entre $...$ pour le rendu inline. "
-            "Toutes les variables mathématiques doivent être écrites en LaTeX, même dans les phrases. "
-            "Utilise un style clair et académique, avec les équations centrées.\n\n"
-            + final_prompt
-        )
+    "Réponds en Markdown. N’utilise des formules LaTeX entre $$ ... $$ que si le sujet exige des calculs ou des démonstrations mathématiques. Sinon, réponds uniquement en texte clair, sans équations.\n\n"
+    + final_prompt
+)
+
 
         st.session_state.history.append({"role": "user", "content": prompt})
 
         try:
-            response = client.responses.create(
-                model="gpt-5",
-                input=final_prompt
-            )
+            response = client.responses.create(model="gpt-5", input=final_prompt)
             ai_answer = response.output_text.strip()
             if not ai_answer:
                 ai_answer = "[Aucune réponse reçue de GPT-5 — possible délai API.]"
@@ -269,14 +191,16 @@ def envoyer_message():
             ai_answer = f"[Erreur API OpenAI] {e}"
 
         st.session_state.history.append({"role": "assistant", "content": ai_answer})
+
 # ---------------------------
-# 8) Envoi du prompt à GPT
+# 9) Envoi manuel uniquement
 # ---------------------------
-if st.button("Envoyer", key="send_button") or st.session_state.get("trigger_send"):
+if st.button("Envoyer", key="send_button"):
+    st.session_state.last_prompt = prompt
     envoyer_message()
 
 # ---------------------------
-# 9) Affichage du chat complet avec LaTeX
+# 10) Affichage de l'historique
 # ---------------------------
 for msg in st.session_state.history:
     render_message(msg["role"], msg["content"])
