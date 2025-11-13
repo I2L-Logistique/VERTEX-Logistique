@@ -109,11 +109,28 @@ st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingé
 # ---------------------------
 # 5) Zone de saisie utilisateur
 # ---------------------------
-prompt = st.text_input("Votre prompt :", placeholder="Formuler votre prompt logistique", label_visibility="collapsed")
-uploaded_file = st.file_uploader("Importer un fichier (PDF, TXT, CSV, XLSX)", type=["pdf", "txt", "csv", "xlsx"])
+prompt = st.text_input(
+    "Votre prompt :",
+    placeholder="Formulez votre requête logistique ici...",
+    label_visibility="collapsed"
+)
 
+uploaded_file = st.file_uploader(
+    "Importer un fichier (PDF, TXT, CSV, XLSX)",
+    type=["pdf", "txt", "csv", "xlsx"]
+)
+
+# Historique des échanges
 if "history" not in st.session_state:
     st.session_state.history = []
+
+# ⚡ Permet d'envoyer en appuyant sur Entrée
+if prompt and st.session_state.get("last_prompt") != prompt:
+    st.session_state.last_prompt = prompt
+    st.session_state.trigger_send = True
+else:
+    st.session_state.trigger_send = False
+
 
 # ---------------------------
 # 6) Extraction du texte
@@ -145,68 +162,118 @@ def extract_text_from_file(uploaded):
 # ---------------------------
 # 7) Affichage façon "document PDF"
 # ---------------------------
+# ---------------------------
+# 7) Affichage façon "document PDF"
+# ---------------------------
 def render_message(role, content):
-    """Affiche chaque message avec MathJax actif et forçage de rendu."""
+    """Affiche chaque message avec un style propre et MathJax actif."""
     st.markdown("""
     <style>
-    .bubble-user, .bubble-ai { padding: 14px 22px; border-radius: 14px; margin: 10px 0; max-width: 90%; line-height: 1.6; font-size: 16px; }
-    .bubble-user { background-color: #004B8D; color: white; margin-left: auto; }
-    .bubble-ai { background-color: #FFFFFF; border: 1px solid #C2D8F2; box-shadow: 0 4px 8px rgba(0,75,141,0.1); color: #001F3F; font-family: 'Georgia', serif; text-align: justify; }
-    mjx-container[jax="CHTML"][display="true"] { display: block; text-align: center; margin: 1.4em auto; font-size: 1.15em; }
+    /* Style général des bulles */
+    .bubble-user, .bubble-ai {
+        padding: 14px 22px;
+        border-radius: 14px;
+        margin: 10px 0;
+        max-width: 90%;
+        line-height: 1.6;
+        font-size: 16px;
+    }
+
+    /* Bulle utilisateur (bleu foncé, à droite) */
+    .bubble-user {
+        background-color: #004B8D;
+        color: white;
+        margin-left: auto;
+        text-align: left;
+        font-weight: 500;
+        border-radius: 16px 16px 2px 16px;
+    }
+
+    /* Bulle assistant (fond clair, à gauche) */
+    .bubble-ai {
+        background-color: #FFFFFF;
+        border: 1px solid #C2D8F2;
+        box-shadow: 0 4px 8px rgba(0,75,141,0.1);
+        color: #001F3F;
+        font-family: 'Georgia', serif;
+        text-align: justify;
+        border-radius: 16px;
+        padding: 22px 28px;
+        line-height: 1.8;
+    }
+
+    /* Centrage et taille des équations LaTeX */
+    mjx-container[jax="CHTML"][display="true"] {
+        display: block;
+        text-align: center;
+        margin: 1.4em auto;
+        font-size: 1.15em;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    bubble_class = "bubble-user" if role == "user" else "bubble-ai"
-    st.markdown(f'<div class="{bubble_class}">', unsafe_allow_html=True)
-    st.markdown(content, unsafe_allow_html=False)
-    st.markdown("</div>", unsafe_allow_html=True)
+    # 🗨️ Affichage conditionnel selon le rôle
+    if role == "user":
+        st.markdown(f'<div class="bubble-user">{content}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="bubble-ai">{content}</div>', unsafe_allow_html=True)
 
-    # 🪄 Force le re-rendu MathJax sur toute la page
+    # 🔄 Force le rendu MathJax pour les équations à chaque affichage
     st.markdown("""
-    <script> if (window.MathJax) { MathJax.typesetPromise(); } </script>
+    <script>
+    if (window.MathJax) {
+        MathJax.typesetPromise();
+    }
+    </script>
     """, unsafe_allow_html=True)
+
 
 # ---------------------------
 # 8) Envoi du prompt à GPT
 # ---------------------------
-if st.button("Envoyer"):
+def envoyer_message():
     if not prompt.strip() and not uploaded_file:
         st.warning("Veuillez saisir un message ou importer un fichier.")
-    else:
-        with st.spinner("Analyse en cours avec GPT-5..."):
-            file_text = ""
-            if uploaded_file:
-                file_text = extract_text_from_file(uploaded_file)
+        return
 
-            final_prompt = prompt
-            if file_text:
-                excerpt = file_text[:30000]
-                final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
+    with st.spinner("Analyse en cours avec GPT-5..."):
+        file_text = ""
+        if uploaded_file:
+            file_text = extract_text_from_file(uploaded_file)
 
-            # 🧩 Formatage pour LaTeX
-            final_prompt = (
-    "Formate ta réponse en Markdown avec les équations LaTeX entre $$ ... $$ "
-    "et les symboles mathématiques dans le texte entre $...$ pour le rendu inline. "
-    "Toutes les variables mathématiques doivent être écrites en LaTeX, même dans les phrases. "
-    "Utilise un style clair et académique, avec les équations centrées.\n\n"
-    + final_prompt
-)
+        final_prompt = prompt
+        if file_text:
+            excerpt = file_text[:30000]
+            final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
 
+        # 🧩 Formatage pour LaTeX
+        final_prompt = (
+            "Formate ta réponse en Markdown avec les équations LaTeX entre $$ ... $$ "
+            "et les symboles mathématiques dans le texte entre $...$ pour le rendu inline. "
+            "Toutes les variables mathématiques doivent être écrites en LaTeX, même dans les phrases. "
+            "Utilise un style clair et académique, avec les équations centrées.\n\n"
+            + final_prompt
+        )
 
-            st.session_state.history.append({"role": "user", "content": prompt})
+        st.session_state.history.append({"role": "user", "content": prompt})
 
-            try:
-                response = client.responses.create(
-                    model="gpt-5",
-                    input=final_prompt
-                )
-                ai_answer = response.output_text.strip()
-                if not ai_answer:
-                    ai_answer = "[Aucune réponse reçue de GPT-5 — possible délai API.]"
-            except Exception as e:
-                ai_answer = f"[Erreur API OpenAI] {e}"
+        try:
+            response = client.responses.create(
+                model="gpt-5",
+                input=final_prompt
+            )
+            ai_answer = response.output_text.strip()
+            if not ai_answer:
+                ai_answer = "[Aucune réponse reçue de GPT-5 — possible délai API.]"
+        except Exception as e:
+            ai_answer = f"[Erreur API OpenAI] {e}"
 
-            st.session_state.history.append({"role": "assistant", "content": ai_answer})
+        st.session_state.history.append({"role": "assistant", "content": ai_answer})
+# ---------------------------
+# 8) Envoi du prompt à GPT
+# ---------------------------
+if st.button("Envoyer", key="send_button") or st.session_state.get("trigger_send"):
+    envoyer_message()
 
 # ---------------------------
 # 9) Affichage du chat complet avec LaTeX
