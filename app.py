@@ -175,9 +175,10 @@ def envoyer_message():
             final_prompt += "\n\nContenu du fichier (extrait):\n" + excerpt
 
         final_prompt = (
-    "Réponds en Markdown. N’utilise des formules LaTeX entre $$ ... $$ que si le sujet exige des calculs ou des démonstrations mathématiques. Sinon, réponds uniquement en texte clair, sans équations.\n\n"
+    "Réponds en Markdown. Si le sujet exige des calculs ou des démonstrations mathématiques, utilise LaTeX pour les équations entre $$ ... $$ et encadre les symboles mathématiques inline par $...$ (ex: $x_{ij}$, $q_i$, $V$). Sinon, réponds uniquement en texte clair, sans équations.\n\n"
     + final_prompt
 )
+
 
 
         st.session_state.history.append({"role": "user", "content": prompt})
