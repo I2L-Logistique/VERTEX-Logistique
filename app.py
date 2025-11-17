@@ -98,7 +98,7 @@ if os.path.exists(LOGO_I2L):
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="big-title">VERTEX</div>', unsafe_allow_html=True)
-st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingénieurs I²L pour la logistique :</div>', unsafe_allow_html=True)
+st.markdown('<div class="small-subtitle">L’assistant IA de l’Ecole d’Ingénieurs I2L pour la logistique :</div>', unsafe_allow_html=True)
 
 # ---------------------------
 # 5) Zone de saisie utilisateur
@@ -164,7 +164,7 @@ def envoyer_message():
         st.warning("Veuillez saisir un message ou importer un fichier.")
         return
 
-    with st.spinner("Analyse en cours avec GPT-5..."):
+    with st.spinner(""):
         file_text = ""
         if uploaded_file:
             file_text = extract_text_from_file(uploaded_file)
